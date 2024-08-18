@@ -1,0 +1,137 @@
+# Enum for User Roles
+enum Role {
+  USER
+  ADMIN
+}
+
+# User Type
+type User {
+  id: ID!
+  email: String!
+  name: String
+  role: Role!
+  blogs: [Blog!]!
+  likes: [Like!]!
+  comments: [Comment!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Blog Type
+type Blog {
+  id: ID!
+  title: String!
+  content: String!
+  authors: [User!]!
+  likes: [Like!]!
+  comments: [Comment!]!
+  likesCount: Int!
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Like Type
+type Like {
+  id: ID!
+  user: User!
+  blog: Blog!
+}
+
+# Comment Type
+type Comment {
+  id: ID!
+  content: String!
+  author: User!
+  blog: Blog!
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Input Types for Creating and Updating Users, Blogs, and Comments
+input CreateUserInput {
+  email: String!
+  password: String!
+  name: String
+  role: Role
+}
+
+input UpdateUserInput {
+  email: String
+  name: String
+  role: Role
+}
+
+input CreateBlogInput {
+  title: String!
+  content: String!
+  authorIds: [ID!]!
+}
+
+input UpdateBlogInput {
+  title: String
+  content: String
+}
+
+input CreateCommentInput {
+  content: String!
+  authorId: ID!
+  blogId: ID!
+}
+
+input UpdateCommentInput {
+  content: String
+}
+
+# Input Types for Authentication
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+  name: String
+  role: Role
+}
+
+# Queries
+type Query {
+  # User Queries
+  users: [User!]!
+  user(id: ID!): User
+
+  # Blog Queries
+  blogs: [Blog!]!
+  blog(id: ID!): Blog
+
+  # Comment Queries
+  comments: [Comment!]!
+  comment(id: ID!): Comment
+}
+
+# Mutations
+type Mutation {
+  # Authentication
+  register(input: RegisterInput!): User!
+  login(input: LoginInput!): String! # Returns JWT token
+
+  # User Mutations
+  createUser(input: CreateUserInput!): User!
+  updateUser(id: ID!, input: UpdateUserInput!): User!
+  deleteUser(id: ID!): Boolean!
+
+  # Blog Mutations
+  createBlog(input: CreateBlogInput!): Blog!
+  updateBlog(id: ID!, input: UpdateBlogInput!): Blog!
+  deleteBlog(id: ID!): Boolean!
+
+  # Comment Mutations
+  createComment(input: CreateCommentInput!): Comment!
+  updateComment(id: ID!, input: UpdateCommentInput!): Comment!
+  deleteComment(id: ID!): Boolean!
+
+  # Like Mutations
+  likeBlog(blogId: ID!): Like!
+  unlikeBlog(blogId: ID!): Boolean!
+}
