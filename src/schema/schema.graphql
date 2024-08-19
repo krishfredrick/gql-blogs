@@ -10,11 +10,12 @@ type User {
   email: String!
   name: String
   role: Role!
-  blogs: [Blog!]!
-  likes: [Like!]!
-  comments: [Comment!]!
+  blogs: [Blog]        # Blogs authored by the user
+  likes: [Like]
+  comments: [Comment]
   createdAt: String!
   updatedAt: String!
+  opt: String
 }
 
 # Blog Type
@@ -22,9 +23,9 @@ type Blog {
   id: ID!
   title: String!
   content: String!
-  authors: [User!]!
-  likes: [Like!]!
-  comments: [Comment!]!
+  author: User!            # Single author
+  likes: [Like]!
+  comments: [Comment]!
   likesCount: Int!
   createdAt: String!
   updatedAt: String!
@@ -58,13 +59,18 @@ input CreateUserInput {
 input UpdateUserInput {
   email: String
   name: String
-  role: Role
+}
+
+input ChangePasswordInput{
+  id: ID!
+  currentPassword: String!
+  newPassword: String!
 }
 
 input CreateBlogInput {
   title: String!
   content: String!
-  authorIds: [ID!]!
+  authorId: ID!           # Single author ID
 }
 
 input UpdateBlogInput {
@@ -100,26 +106,42 @@ type Query {
   # User Queries
   users: [User!]!
   user(id: ID!): User
+  opt: String
 
   # Blog Queries
   blogs: [Blog!]!
   blog(id: ID!): Blog
 
   # Comment Queries
-  comments: [Comment!]!
+  comments(id: ID!): [Comment!]!
   comment(id: ID!): Comment
+}
+
+# Interface for Response
+interface response {
+  message: String!
+  success: Boolean!
+  status: Int
+}
+
+# User Response Type implementing Response Interface
+type userResponse implements response {
+  data: User
+  message: String!
+  success: Boolean!
+  status: Int
 }
 
 # Mutations
 type Mutation {
   # Authentication
-  register(input: RegisterInput!): User!
+  register(input: RegisterInput!): userResponse!
   login(input: LoginInput!): String! # Returns JWT token
 
   # User Mutations
-  createUser(input: CreateUserInput!): User!
-  updateUser(id: ID!, input: UpdateUserInput!): User!
+  updateUser(id: ID!, input: UpdateUserInput!): userResponse!
   deleteUser(id: ID!): Boolean!
+  changePassword(input: ChangePasswordInput!): String!
 
   # Blog Mutations
   createBlog(input: CreateBlogInput!): Blog!

@@ -1,9 +1,14 @@
-export default {
-   Query:{
+import { Resolvers } from '../generated/graphql'
+import { resolvers as userResolver } from './user.resolver'
 
-   },
-   Mutation:{
+const { Query: UserQuery, Mutation: UserMutation, ...UserOptions } = userResolver;
 
+export const resolvers: Resolvers= {
+  Query:{
+    ...UserQuery
+  }, 
+  Mutation:{
+    ...UserMutation
   },
   
 }

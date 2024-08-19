@@ -20,14 +20,15 @@ enum Role {
 
 // User Model
 model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  password  String
-  name      String?
-  role      Role     @default(USER)
-  blogs     BlogAuthor[] // Many-to-Many relationship with Blog as an author via join table
-  likes     Like[]   // Many-to-Many relationship with Blog for likes via join table
-  comments  Comment[] // One-to-Many relationship with Comment
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  email    String    @unique
+  password String
+  name     String?
+  role     Role      @default(USER)
+  blogs    Blog[]    // One-to-Many relationship with Blog as an author
+  likes    Like[]    // Many-to-Many relationship with Blog for likes via join table
+  comments Comment[] // One-to-Many relationship with Comment
+  otp      String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -35,51 +36,39 @@ model User {
 
 // Blog Model
 model Blog {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
   title      String
   content    String
-  authors    BlogAuthor[] // Many-to-Many relationship with User as authors via join table
-  likes      Like[]   // Many-to-Many relationship with User for likes via join table
+  author     User      @relation(fields: [authorId], references: [id]) // One-to-Many relationship with User
+  authorId   String    @db.ObjectId
+  likes      Like[]    // Many-to-Many relationship with User for likes via join table
   comments   Comment[] // One-to-Many relationship with Comment
-  likesCount Int      @default(0) // Manually managed count
+  likesCount Int       @default(0) // Manually managed count
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-
-// Join Table for Many-to-Many relationship between User and Blog (Authorship)
-model BlogAuthor {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
-  user    User   @relation(fields: [userId], references: [id])
-  userId  String @db.ObjectId
-  blog    Blog   @relation(fields: [blogId], references: [id])
-  blogId  String @db.ObjectId
-
-  @@unique([userId, blogId]) // Ensures a user can only be an author of a blog once
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Like Model for Many-to-Many relationship between User and Blog
 model Like {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
-  user    User   @relation(fields: [userId], references: [id])
-  userId  String @db.ObjectId
-  blog    Blog   @relation(fields: [blogId], references: [id])
-  blogId  String @db.ObjectId
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @db.ObjectId
+  blog   Blog   @relation(fields: [blogId], references: [id])
+  blogId String @db.ObjectId
 
   @@unique([userId, blogId]) // Ensures a user can like a blog only once
 }
 
 // Comment Model
 model Comment {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  content   String
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String   @db.ObjectId
-  blog      Blog     @relation(fields: [blogId], references: [id])
-  blogId    String   @db.ObjectId
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  content  String
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String @db.ObjectId
+  blog     Blog   @relation(fields: [blogId], references: [id])
+  blogId   String @db.ObjectId
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-
