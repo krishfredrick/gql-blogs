@@ -10,7 +10,7 @@ type User {
   email: String!
   name: String
   role: Role!
-  blogs: [Blog]        # Blogs authored by the user
+  blogs: [Blog] # Blogs authored by the user
   likes: [Like]
   comments: [Comment]
   createdAt: String!
@@ -23,7 +23,7 @@ type Blog {
   id: ID!
   title: String!
   content: String!
-  author: User!            # Single author
+  author: User! # Single author
   likes: [Like]!
   comments: [Comment]!
   likesCount: Int!
@@ -61,7 +61,7 @@ input UpdateUserInput {
   name: String
 }
 
-input ChangePasswordInput{
+input ChangePasswordInput {
   id: ID!
   currentPassword: String!
   newPassword: String!
@@ -70,7 +70,7 @@ input ChangePasswordInput{
 input CreateBlogInput {
   title: String!
   content: String!
-  authorId: ID!           # Single author ID
+  authorId: ID! # Single author ID
 }
 
 input UpdateBlogInput {
@@ -101,19 +101,25 @@ input RegisterInput {
   role: Role
 }
 
+input UserIdentifierInput {
+  id: ID
+  email: String
+}
+
+
+
 # Queries
 type Query {
   # User Queries
   users: [User!]!
-  user(id: ID!): User
-  opt: String
+  user(userInput: UserIdentifierInput!): User
 
   # Blog Queries
   blogs: [Blog!]!
   blog(id: ID!): Blog
 
   # Comment Queries
-  comments(id: ID!): [Comment!]!
+  # comments(id: ID!): [Comment!]!
   comment(id: ID!): Comment
 }
 
@@ -137,10 +143,10 @@ type Mutation {
   # Authentication
   register(input: RegisterInput!): userResponse!
   login(input: LoginInput!): String! # Returns JWT token
-
   # User Mutations
   updateUser(id: ID!, input: UpdateUserInput!): userResponse!
   deleteUser(id: ID!): Boolean!
+  otp(email: String): String
   changePassword(input: ChangePasswordInput!): String!
 
   # Blog Mutations
@@ -155,5 +161,6 @@ type Mutation {
 
   # Like Mutations
   likeBlog(blogId: ID!): Like!
+  # Three Activities involved in one one like action 
   unlikeBlog(blogId: ID!): Boolean!
 }

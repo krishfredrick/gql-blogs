@@ -5,11 +5,12 @@ import {
   UpdateUserInput,
   ChangePasswordInput
 } from "../generated/graphql";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { GraphQLError } from "graphql";
 import crypto from "crypto";
-import { PrismaClient } from "@prisma/client";
 import { db } from ".";
+import { User as UserType } from "../generated/graphql";
+import { Response } from "express";
 
 export  class User {
 
@@ -24,7 +25,7 @@ export  class User {
     return argon.verify(hashedpassword, password);
   }
 
-  public createToken(payload: any) {
+  public createToken(payload: Partial<UserType>) {
     return jwt.sign(payload, this.secret, { expiresIn: "2h" });
   }
 
@@ -32,11 +33,13 @@ export  class User {
     return jwt.verify(token, this.secret);
   }
 
-  public async generateOTP(id: string) {
+  public async generateOTP(email: string) {
     const otp = crypto.randomInt(100000, 999999).toString();
-    await this.updateOTP(id, otp);
+    await this.updateOTP(email, otp);
     return otp;
   }
+  
+  
 
   public async verifyOTP(id: string, otp: string) {
     {
@@ -54,13 +57,13 @@ export  class User {
     }
   }
 
-  private async updateOTP(id: string, otp: string | null) {
+  private async updateOTP(email: string, otp: string | null) {
     let hashedOTP: null | string = null;
     if (otp) {
       hashedOTP = await this.hash(otp);
     }
     return db.user.update({
-      where: { id },
+      where: { email },
       data: { otp: hashedOTP },
     });
   }
@@ -139,7 +142,7 @@ export  class User {
     }
 
     // If user does exist
-    return this.createToken({ email: input.email });
+    return this.createToken({ email: input.email, id:  user.id});
   }
   //  DELETE /USER
   public async deleteUser(id: string) {
@@ -159,8 +162,26 @@ export  class User {
 
 
   // Get all user data
-  public getAllUser(){
+  public getAllUser(args?: unknown){
     return db.user.findMany();
   }
 
+  /************************************************************************************************
+   *  Settings Cookies and Clearing Cookies
+   * ************************************************************************************************
+   */
+
+  public setCookie(res: Response, user: Partial<UserType>) {
+    //clear and setting the cookie
+    this.clearCookie(res);
+    const token = this.createToken(user);
+    res.cookie('token', token, {
+      httpOnly: true, // recommended for security
+      secure: process.env.NODE_ENV === 'production', // set to true in production
+      sameSite: 'strict', // or 'Lax' depending on your needs
+    });
+  }
+  public clearCookie(res: Response) {
+    res.clearCookie('token');
+  }
 }

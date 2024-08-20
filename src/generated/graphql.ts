@@ -87,6 +87,7 @@ export type Mutation = {
   deleteUser: Scalars['Boolean']['output'];
   likeBlog: Like;
   login: Scalars['String']['output'];
+  otp?: Maybe<Scalars['String']['output']>;
   register: UserResponse;
   unlikeBlog: Scalars['Boolean']['output'];
   updateBlog: Blog;
@@ -135,6 +136,11 @@ export type MutationLoginArgs = {
 };
 
 
+export type MutationOtpArgs = {
+  email?: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type MutationRegisterArgs = {
   input: RegisterInput;
 };
@@ -167,8 +173,6 @@ export type Query = {
   blog?: Maybe<Blog>;
   blogs: Array<Blog>;
   comment?: Maybe<Comment>;
-  comments: Array<Comment>;
-  opt?: Maybe<Scalars['String']['output']>;
   user?: Maybe<User>;
   users: Array<User>;
 };
@@ -184,13 +188,8 @@ export type QueryCommentArgs = {
 };
 
 
-export type QueryCommentsArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
 export type QueryUserArgs = {
-  id: Scalars['ID']['input'];
+  userInput: UserIdentifierInput;
 };
 
 export type RegisterInput = {
@@ -231,6 +230,11 @@ export type User = {
   opt?: Maybe<Scalars['String']['output']>;
   role: Role;
   updatedAt: Scalars['String']['output'];
+};
+
+export type UserIdentifierInput = {
+  email?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 export type Response = {
@@ -342,6 +346,7 @@ export type ResolversTypes = {
   UpdateCommentInput: UpdateCommentInput;
   UpdateUserInput: UpdateUserInput;
   User: ResolverTypeWrapper<User>;
+  UserIdentifierInput: UserIdentifierInput;
   response: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['response']>;
   userResponse: ResolverTypeWrapper<UserResponse>;
 };
@@ -367,6 +372,7 @@ export type ResolversParentTypes = {
   UpdateCommentInput: UpdateCommentInput;
   UpdateUserInput: UpdateUserInput;
   User: User;
+  UserIdentifierInput: UserIdentifierInput;
   response: ResolversInterfaceTypes<ResolversParentTypes>['response'];
   userResponse: UserResponse;
 };
@@ -410,6 +416,7 @@ export type MutationResolvers<ContextType = DataSourceContext, ParentType extend
   deleteUser?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteUserArgs, 'id'>>;
   likeBlog?: Resolver<ResolversTypes['Like'], ParentType, ContextType, RequireFields<MutationLikeBlogArgs, 'blogId'>>;
   login?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationLoginArgs, 'input'>>;
+  otp?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, Partial<MutationOtpArgs>>;
   register?: Resolver<ResolversTypes['userResponse'], ParentType, ContextType, RequireFields<MutationRegisterArgs, 'input'>>;
   unlikeBlog?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationUnlikeBlogArgs, 'blogId'>>;
   updateBlog?: Resolver<ResolversTypes['Blog'], ParentType, ContextType, RequireFields<MutationUpdateBlogArgs, 'id' | 'input'>>;
@@ -421,9 +428,7 @@ export type QueryResolvers<ContextType = DataSourceContext, ParentType extends R
   blog?: Resolver<Maybe<ResolversTypes['Blog']>, ParentType, ContextType, RequireFields<QueryBlogArgs, 'id'>>;
   blogs?: Resolver<Array<ResolversTypes['Blog']>, ParentType, ContextType>;
   comment?: Resolver<Maybe<ResolversTypes['Comment']>, ParentType, ContextType, RequireFields<QueryCommentArgs, 'id'>>;
-  comments?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType, RequireFields<QueryCommentsArgs, 'id'>>;
-  opt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryUserArgs, 'id'>>;
+  user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryUserArgs, 'userInput'>>;
   users?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
 };
 
