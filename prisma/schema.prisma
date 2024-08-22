@@ -20,15 +20,16 @@ enum Role {
 
 // User Model
 model User {
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  email    String    @unique
-  password String
-  name     String?
-  role     Role      @default(USER)
-  blogs    Blog[]    // One-to-Many relationship with Blog as an author
-  likes    Like[]    // Many-to-Many relationship with Blog for likes via join table
-  comments Comment[] // One-to-Many relationship with Comment
-  otp      String?
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  email        String    @unique
+  password     String
+  name         String?
+  role         Role      @default(USER)
+  blogs        Blog[] // One-to-Many relationship with Blog as an author
+  likes        Like[] // Many-to-Many relationship with Blog for likes via join table
+  comments     Comment[] // One-to-Many relationship with Comment
+  otp          String?
+  refreshToken String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -41,7 +42,7 @@ model Blog {
   content    String
   author     User      @relation(fields: [authorId], references: [id]) // One-to-Many relationship with User
   authorId   String    @db.ObjectId
-  likes      Like[]    // Many-to-Many relationship with User for likes via join table
+  likes      Like[] // Many-to-Many relationship with User for likes via join table
   comments   Comment[] // One-to-Many relationship with Comment
   likesCount Int       @default(0) // Manually managed count
 

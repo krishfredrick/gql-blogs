@@ -15,45 +15,28 @@ const client = new SESClient({
 
 export const sendEmail = async function(otp: string) {
   
-  const input = { // SendEmailRequest
-    Source: "noobielearner4@gmail.com", // required
-    Destination: { // Destination
-      ToAddresses: [ // AddressList
+  const input = { 
+    Source: "noobielearner4@gmail.com", 
+    Destination: { 
+      ToAddresses: [ 
         "testing0rk@yopmail.com",
       ],
-      // CcAddresses: [
-      //   "STRING_VALUE",
-      // ],
-      // BccAddresses: [
-      //   "STRING_VALUE",
-      // ],
+      
     },
-    Message: { // Message
-      Subject: { // Content
-        Data: "Generating OTP", // required
-        Charset: "utf-8", // required
+    Message: { 
+      Subject: { 
+        Data: "Generating OTP", 
+        Charset: "utf-8",
       },
       Body: { // Body
         Text: {
-          Data: `Change Password otp ${otp}`, // required
+          Data: `Change Password otp ${otp}`,
           Charset: "utf-8",
         },
-        // Html: {
-        //   Data: "STRING_VALUE", // required
-        //   Charset: "STRING_VALUE",
-        // },
+      
       },
     },
-    // ReplyToAddresses: [
-    //   "STRING_VALUE",
-    // ],
-    // Tags: [ // MessageTagList
-    //   { // MessageTag
-    //     Name: "STRING_VALUE", // required
-    //     Value: "STRING_VALUE", // required
-    //   },
-    // ],
-    // ConfigurationSetName: "STRING_VALUE",
+
   };
   const command = new SendEmailCommand(input);
   const response = await client.send(command);

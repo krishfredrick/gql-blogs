@@ -20,6 +20,7 @@ export type Scalars = {
 export type Blog = {
   __typename?: 'Blog';
   author: User;
+  authorId: Scalars['ID']['output'];
   comments: Array<Maybe<Comment>>;
   content: Scalars['String']['output'];
   createdAt: Scalars['String']['output'];
@@ -39,7 +40,9 @@ export type ChangePasswordInput = {
 export type Comment = {
   __typename?: 'Comment';
   author: User;
+  authorId: Scalars['ID']['output'];
   blog: Blog;
+  blogId: Scalars['ID']['output'];
   content: Scalars['String']['output'];
   createdAt: Scalars['String']['output'];
   id: Scalars['ID']['output'];
@@ -47,13 +50,11 @@ export type Comment = {
 };
 
 export type CreateBlogInput = {
-  authorId: Scalars['ID']['input'];
   content: Scalars['String']['input'];
   title: Scalars['String']['input'];
 };
 
 export type CreateCommentInput = {
-  authorId: Scalars['ID']['input'];
   blogId: Scalars['ID']['input'];
   content: Scalars['String']['input'];
 };
@@ -86,7 +87,7 @@ export type Mutation = {
   deleteComment: Scalars['Boolean']['output'];
   deleteUser: Scalars['Boolean']['output'];
   likeBlog: Like;
-  login: Scalars['String']['output'];
+  login: LoginOutput;
   otp?: Maybe<Scalars['String']['output']>;
   register: UserResponse;
   unlikeBlog: Scalars['Boolean']['output'];
@@ -173,6 +174,8 @@ export type Query = {
   blog?: Maybe<Blog>;
   blogs: Array<Blog>;
   comment?: Maybe<Comment>;
+  comments: Array<Comment>;
+  logout?: Maybe<Scalars['String']['output']>;
   user?: Maybe<User>;
   users: Array<User>;
 };
@@ -184,6 +187,11 @@ export type QueryBlogArgs = {
 
 
 export type QueryCommentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryCommentsArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -235,6 +243,12 @@ export type User = {
 export type UserIdentifierInput = {
   email?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type LoginOutput = {
+  __typename?: 'loginOutput';
+  access_token: Scalars['String']['output'];
+  refresh_token: Scalars['String']['output'];
 };
 
 export type Response = {
@@ -347,6 +361,7 @@ export type ResolversTypes = {
   UpdateUserInput: UpdateUserInput;
   User: ResolverTypeWrapper<User>;
   UserIdentifierInput: UserIdentifierInput;
+  loginOutput: ResolverTypeWrapper<LoginOutput>;
   response: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['response']>;
   userResponse: ResolverTypeWrapper<UserResponse>;
 };
@@ -373,12 +388,14 @@ export type ResolversParentTypes = {
   UpdateUserInput: UpdateUserInput;
   User: User;
   UserIdentifierInput: UserIdentifierInput;
+  loginOutput: LoginOutput;
   response: ResolversInterfaceTypes<ResolversParentTypes>['response'];
   userResponse: UserResponse;
 };
 
 export type BlogResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['Blog'] = ResolversParentTypes['Blog']> = {
   author?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  authorId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   comments?: Resolver<Array<Maybe<ResolversTypes['Comment']>>, ParentType, ContextType>;
   content?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -392,7 +409,9 @@ export type BlogResolvers<ContextType = DataSourceContext, ParentType extends Re
 
 export type CommentResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['Comment'] = ResolversParentTypes['Comment']> = {
   author?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  authorId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   blog?: Resolver<ResolversTypes['Blog'], ParentType, ContextType>;
+  blogId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   content?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
@@ -415,7 +434,7 @@ export type MutationResolvers<ContextType = DataSourceContext, ParentType extend
   deleteComment?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteCommentArgs, 'id'>>;
   deleteUser?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteUserArgs, 'id'>>;
   likeBlog?: Resolver<ResolversTypes['Like'], ParentType, ContextType, RequireFields<MutationLikeBlogArgs, 'blogId'>>;
-  login?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationLoginArgs, 'input'>>;
+  login?: Resolver<ResolversTypes['loginOutput'], ParentType, ContextType, RequireFields<MutationLoginArgs, 'input'>>;
   otp?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, Partial<MutationOtpArgs>>;
   register?: Resolver<ResolversTypes['userResponse'], ParentType, ContextType, RequireFields<MutationRegisterArgs, 'input'>>;
   unlikeBlog?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationUnlikeBlogArgs, 'blogId'>>;
@@ -428,6 +447,8 @@ export type QueryResolvers<ContextType = DataSourceContext, ParentType extends R
   blog?: Resolver<Maybe<ResolversTypes['Blog']>, ParentType, ContextType, RequireFields<QueryBlogArgs, 'id'>>;
   blogs?: Resolver<Array<ResolversTypes['Blog']>, ParentType, ContextType>;
   comment?: Resolver<Maybe<ResolversTypes['Comment']>, ParentType, ContextType, RequireFields<QueryCommentArgs, 'id'>>;
+  comments?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType, RequireFields<QueryCommentsArgs, 'id'>>;
+  logout?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryUserArgs, 'userInput'>>;
   users?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
 };
@@ -443,6 +464,12 @@ export type UserResolvers<ContextType = DataSourceContext, ParentType extends Re
   opt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   role?: Resolver<ResolversTypes['Role'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type LoginOutputResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['loginOutput'] = ResolversParentTypes['loginOutput']> = {
+  access_token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  refresh_token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -468,6 +495,7 @@ export type Resolvers<ContextType = DataSourceContext> = {
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
+  loginOutput?: LoginOutputResolvers<ContextType>;
   response?: ResponseResolvers<ContextType>;
   userResponse?: UserResponseResolvers<ContextType>;
 };

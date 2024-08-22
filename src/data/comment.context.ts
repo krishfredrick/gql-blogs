@@ -10,13 +10,23 @@ export class Comment {
    * GET Comment by Id
    */
   public async getCommentById(id: string) {
-    return db.comment.findUnique({ where: { id } });
+    return db.comment.findUnique({ where: { id }, include:{
+      author: true,
+      blog: true,
+    } });
+  }
+
+  public async getCommentsByBlogId(blogId: string) {
+    return db.comment.findMany({ where: { blogId }, include:{
+      author: true,
+      blog: true,
+    } });
   }
 
   /**
    * CREATE Comment -
    */
-  public async createComment(input: CreateCommentInput) {
+  public async createComment(userId:string ,input: CreateCommentInput) {
     // Check if the blog exists
     const blog = await db.blog.findUnique({ where: { id: input.blogId } });
     if (!blog) {
@@ -31,7 +41,7 @@ export class Comment {
     return db.comment.create({
       data: {
         content: input.content,
-        authorId: input.authorId,
+        authorId: userId,
         blogId: input.blogId,
       }
     });

@@ -2,6 +2,7 @@ import { GraphQLError } from "graphql";
 import { Resolvers, Role, User } from "../generated/graphql";
 import { sendEmail } from "../services/aws-ses";
 import DateConverter from "../utils/Date";
+import { ensureAuthenticated } from "../utils/auth";
 
 export const resolvers: Resolvers = {
   Query: {
@@ -55,6 +56,27 @@ export const resolvers: Resolvers = {
           });
         }
       }
+    },
+    async logout(root, args, context, info){
+      try {
+        ensureAuthenticated(context.auth);
+        await context.dataSources.User.logout(context.res, context.res.user?.email);
+        return " Logged out successfully"
+      } catch (error) {
+        if(error instanceof Error ){
+          throw new GraphQLError(error.message, {
+            extensions: {
+              code: "INTERNAL_SERVER_ERROR",
+            },
+          })
+        }else{
+          throw new GraphQLError("An unknown error occurred on logout", {
+            extensions: {
+              code: "INTERNAL_SERVER_ERROR",
+            },
+          });
+        }
+      }
     }
     
   },
@@ -63,6 +85,8 @@ export const resolvers: Resolvers = {
       console.log({ args });
       try {
         const user = await context.dataSources.User.createUser(args.input);
+        // We assume once the user is account is created we are logging him in
+        await context.dataSources.User.login({email: args.input.email, password: args.input.password}, context.res);
         console.log({ user });
         if (!user) {
           throw new GraphQLError(`Something went wrong please try again`, {
@@ -94,14 +118,17 @@ export const resolvers: Resolvers = {
     async login(root, args, context, info) {
       try {
         console.log("Does it ends on the resolvers?");
-        const token = await context.dataSources.User.login(args.input);
-        // Set the token in the cookie
-        context.res.cookie("token", token, {
-          httpOnly: true, // recommended for security
-          secure: process.env.NODE_ENV === "production", // set to true in production
-          sameSite: "strict", // or 'Lax' depending on your needs
-        });
-        return token;
+        if(context.auth){
+          throw new GraphQLError(` Already logged in`, {
+            extensions: {
+              code: "ALREADY_LOGGED_IN",
+              statusbar: "ERROR",
+            },
+          })
+        }
+        const {refresh_token, access_token} = await context.dataSources.User.login(args.input, context.res);
+
+        return { refresh_token, access_token};
       } catch (error) {
         if (error instanceof Error) {
           throw new GraphQLError(error.message, {
@@ -142,4 +169,5 @@ export const resolvers: Resolvers = {
       }
     },
   },
+ 
 };

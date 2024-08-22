@@ -7,20 +7,24 @@ export class Blog {
    * GET Blog by Id
    */
   public async getBlogById(id: string) {
-    return db.blog.findUnique({ where: { id } });
+    return db.blog.findUnique({ where: { id }, include:{
+      author: true,
+      comments:true,
+      likes:true,
+    } });
   }
 
   public async getAllBlogs(args: unknown) {
-    return db.blog.findMany();
+    return db.blog.findMany({ include: { comments: true, likes: true, author: true}});
   }
 
   /**
    * CREATE BLOG -
    */
-  public async createBlog(input: CreateBlogInput) {
+  public async createBlog(userId: string, input: CreateBlogInput) {
     return db.blog.create({
       data: {
-        authorId: input.authorId,
+        authorId: userId,
         content: input.content,
         title: input.title,
       },

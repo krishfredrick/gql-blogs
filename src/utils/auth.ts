@@ -1,27 +1,44 @@
 import { GraphQLError } from "graphql";
 import { User } from "../data";
-import { Response } from "express";
+import { Request, Response } from "express";
 import { JwtPayload } from "jsonwebtoken";
-import { User as UserType } from '../generated/graphql'
+import { User as UserType } from "../generated/graphql";
 
 const user = new User();
 
-export const getUser = async (token: string, res: Response):  Promise<Partial<UserType> | JwtPayload | null> => {
+export const getUser = async (
+  req: Request,
+  res: Response
+): Promise<Partial<UserType> | JwtPayload | null> => {
   try {
     console.log("is hitting on utils");
-    const email = user.verifyToken(token);
-    return email as JwtPayload;
-  } catch (error) {
-    if (error instanceof Error && error.message === "jwt expired") {
-      //  clearing the token once it  was expired on the cookie
-      user.clearCookie(res);
-      // note this is custom clearCookie method for clearing token
+
+    const payload = user.verifyToken(req.cookies.access_token);
+    // console.log("veriy token: " + payload);
+
+    if (!payload) {
+      // This const payload is scope of within the if clause so don't be confused with that
+      const payload = await user.refreshSession(req.cookies.refresh_token, res);
+      return payload;
     }
-    // throw new GraphQLError(` Token has expired Please initiate  a new one`, {
-    //   extensions: {
-    //     code: "UNAUTHORIZED",
-    //   },
-    // });
-    return null;
+
+    return payload as JwtPayload;
+  } catch (error) {
+    console.log({error: error, screwup: " in Authpage"})
+    throw new GraphQLError(error instanceof Error ? error.message : "Internal Server Error", {
+      extensions: {
+        code: error instanceof Error ? "UNAUTHENTICATED" : "INTERNAL_SERVER_ERROR",
+      },
+    });
   }
 };
+
+
+export const ensureAuthenticated = (auth: boolean): void => {
+  if (!auth) {
+    throw new GraphQLError("Unauthenticated. Please log in.", {
+      extensions: { code: "UNAUTHENTICATED" },
+    });
+  }
+};
+

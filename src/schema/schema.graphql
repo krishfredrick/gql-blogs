@@ -24,6 +24,7 @@ type Blog {
   title: String!
   content: String!
   author: User! # Single author
+  authorId: ID! 
   likes: [Like]!
   comments: [Comment]!
   likesCount: Int!
@@ -42,10 +43,17 @@ type Like {
 type Comment {
   id: ID!
   content: String!
+  authorId: ID!
   author: User!
+  blogId: ID!
   blog: Blog!
   createdAt: String!
   updatedAt: String!
+}
+
+type loginOutput{
+  access_token: String!
+  refresh_token: String!
 }
 
 # Input Types for Creating and Updating Users, Blogs, and Comments
@@ -70,7 +78,8 @@ input ChangePasswordInput {
 input CreateBlogInput {
   title: String!
   content: String!
-  authorId: ID! # Single author ID
+  # authorId: ID! # Single author ID
+  # We will get the author id from the Response.user after the authentication
 }
 
 input UpdateBlogInput {
@@ -80,7 +89,9 @@ input UpdateBlogInput {
 
 input CreateCommentInput {
   content: String!
-  authorId: ID!
+  # authorId: ID!
+  # We will get the author id from the Response.user after the authentication
+  # blogId: ID! # Single blog ID
   blogId: ID!
 }
 
@@ -113,13 +124,14 @@ type Query {
   # User Queries
   users: [User!]!
   user(userInput: UserIdentifierInput!): User
+  logout: String
 
   # Blog Queries
   blogs: [Blog!]!
   blog(id: ID!): Blog
 
   # Comment Queries
-  # comments(id: ID!): [Comment!]!
+  comments(id: ID!): [Comment!]!
   comment(id: ID!): Comment
 }
 
@@ -142,7 +154,7 @@ type userResponse implements response {
 type Mutation {
   # Authentication
   register(input: RegisterInput!): userResponse!
-  login(input: LoginInput!): String! # Returns JWT token
+  login(input: LoginInput!): loginOutput! # Returns JWT token
   # User Mutations
   updateUser(id: ID!, input: UpdateUserInput!): userResponse!
   deleteUser(id: ID!): Boolean!

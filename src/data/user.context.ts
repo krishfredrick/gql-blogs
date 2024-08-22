@@ -3,7 +3,7 @@ import {
   CreateUserInput,
   LoginInput,
   UpdateUserInput,
-  ChangePasswordInput
+  ChangePasswordInput,
 } from "../generated/graphql";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { GraphQLError } from "graphql";
@@ -12,25 +12,26 @@ import { db } from ".";
 import { User as UserType } from "../generated/graphql";
 import { Response } from "express";
 
-export  class User {
-
+export class User {
   private secret = process.env.SECRET || "";
 
   private hash(password: string) {
     return argon.hash(password);
   }
 
-
   private verify(hashedpassword: string, password: string) {
     return argon.verify(hashedpassword, password);
   }
 
-  public createToken(payload: Partial<UserType>) {
-    return jwt.sign(payload, this.secret, { expiresIn: "2h" });
+  public createToken(
+    payload: Partial<UserType>,
+    expiresIn: number | string = "1m"
+  ) {
+    return jwt.sign(payload, this.secret, { expiresIn });
   }
 
   public verifyToken(token: string) {
-    return jwt.verify(token, this.secret);
+    return jwt.verify(token, this.secret, { ignoreExpiration: true});
   }
 
   public async generateOTP(email: string) {
@@ -38,8 +39,6 @@ export  class User {
     await this.updateOTP(email, otp);
     return otp;
   }
-  
-  
 
   public async verifyOTP(id: string, otp: string) {
     {
@@ -119,7 +118,15 @@ export  class User {
     }
   }
 
-  public async login(input: LoginInput) {
+  // update RefreshToken on db
+  private async updateRefreshToken(token: string, id: string) {
+    return db.user.update({
+      where: { id },
+      data: { refreshToken: token },
+    });
+  }
+
+  public async login(input: LoginInput, res: Response) {
     const user = await this.getUserByEmail(input.email);
     //  If user doens't exist
     if (!user) {
@@ -132,18 +139,49 @@ export  class User {
         }
       );
     }
+
     const verify = await this.verify(user.password, input.password);
-    if(!verify){
+    if (!verify) {
       throw new GraphQLError(`Un Authorized entry`, {
         extensions: {
           code: "FORBIDDEN",
         },
-      })
+      });
     }
 
+    const access_token = this.setCookie(res, {
+        email: input.email,
+        id: user.id,
+      }),
+      refresh_token = this.setCookie(
+        res,
+        { email: input.email, id: user.id },
+        "refresh_token"
+      );
+
+    await this.updateRefreshToken(refresh_token, user.id);
+
     // If user does exist
-    return this.createToken({ email: input.email, id:  user.id});
+    return {
+      access_token,
+      refresh_token,
+    };
   }
+
+  public async logout(res:Response, email:string){
+    try {
+      this.clearCookie(res, "access_token");
+      this.clearCookie(res, "refresh_token");
+      return db.user.update({
+        where: { email },
+        data: { refreshToken: null },
+      }); 
+    } catch (error) {
+      throw new Error("Logout failed ")
+    }
+  }
+
+
   //  DELETE /USER
   public async deleteUser(id: string) {
     return db.user.delete({
@@ -156,32 +194,48 @@ export  class User {
       where: { id: input.id },
       data: {
         password: await this.hash(input.newPassword),
+        otp: null,
       },
-    })
+    });
   }
 
-
   // Get all user data
-  public getAllUser(args?: unknown){
+  public getAllUser(args?: unknown) {
     return db.user.findMany();
   }
 
   /************************************************************************************************
    *  Settings Cookies and Clearing Cookies
-   * ************************************************************************************************
+   *************************************************************************************************
    */
 
-  public setCookie(res: Response, user: Partial<UserType>) {
-    //clear and setting the cookie
-    this.clearCookie(res);
-    const token = this.createToken(user);
-    res.cookie('token', token, {
-      httpOnly: true, // recommended for security
-      secure: process.env.NODE_ENV === 'production', // set to true in production
-      sameSite: 'strict', // or 'Lax' depending on your needs
+  public setCookie(
+    res: Response,
+    user: Partial<UserType>,
+    cookieName: string = "access_token"
+  ) {
+    this.clearCookie(res, cookieName);
+    const token =
+      cookieName === "access_token"
+        ? this.createToken(user)
+        : this.createToken(user, "1d");
+    res.cookie(cookieName, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // set to true in production
+      sameSite: "strict",
     });
+    return token;
   }
-  public clearCookie(res: Response) {
-    res.clearCookie('token');
+  public clearCookie(res: Response, cookie: string = "access_token") {
+    res.clearCookie(cookie);
+  }
+  public async refreshSession(token: string, res: Response) {
+    const payload = this.verifyToken(token);
+    if (!payload) {
+      this.clearCookie(res, "refresh_token");
+      throw new Error("Invalid or expired token");
+    }
+    this.setCookie(res, payload as JwtPayload as UserType);
+    return payload as JwtPayload;
   }
 }

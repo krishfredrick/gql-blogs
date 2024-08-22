@@ -67,13 +67,16 @@ async function startServer() {
           req,
           res,
         }: Pick<MyContext, "req"| 'res'>): Promise<MyContext> => {
-          const token = req?.cookies?.token;
+          const token = req?.cookies?.access_token;
         
           let user: null | Partial<UserType> | JwtPayload = null;
-          if (token) user = await getUser(token, res);
+          if (token) user = await getUser(req, res);
           res.user = user;
           let auth = false;
           if (user) auth = true;
+
+          // please pass the ensureAuthenticated() on the top of the your route to make it private query
+          // 
 
           return {
             dataSources: {
